@@ -2,6 +2,7 @@ package validators
 
 import (
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -148,12 +149,26 @@ func IsValidRemoteURL(rawURL string) bool {
 	}
 
 	// Reject localhost URLs for remotes (security/production concerns)
+	// Allow localhost if MCP_REGISTRY_ALLOW_LOCALHOST is explicitly enabled (for local development)
 	hostname := u.Hostname()
-	if hostname == "localhost" || hostname == "127.0.0.1" || strings.HasSuffix(hostname, ".localhost") {
-		return false
+	isLocalhost := hostname == "localhost" || hostname == "127.0.0.1" || strings.HasSuffix(hostname, ".localhost")
+
+	allowLocalhostEnv := os.Getenv("MCP_REGISTRY_ALLOW_LOCALHOST")
+	allowLocalhost := allowLocalhostEnv == "true" || allowLocalhostEnv == "1"
+
+	if isLocalhost {
+		// Check if localhost URLs are allowed via environment variable
+		if !allowLocalhost {
+			return false
+		}
+		// If explicitly enabled, allow localhost URLs (http or https)
 	}
 
-	if u.Scheme != "https" {
+	// Require HTTPS for non-localhost URLs, but allow HTTP for localhost (when enabled)
+	if u.Scheme != "https" && u.Scheme != "http" {
+		return false
+	}
+	if u.Scheme == "http" && !allowLocalhost {
 		return false
 	}
 
