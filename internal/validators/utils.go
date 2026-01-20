@@ -134,6 +134,11 @@ func IsValidSubfolderPath(path string) bool {
 
 // IsValidRemoteURL checks if a URL is valid for remotes (stricter than packages - no localhost allowed)
 func IsValidRemoteURL(rawURL string) bool {
+	const (
+		httpScheme  = "http"
+		httpsScheme = "https"
+	)
+
 	// First check basic URL structure
 	if !IsValidURL(rawURL) {
 		return false
@@ -165,10 +170,10 @@ func IsValidRemoteURL(rawURL string) bool {
 	}
 
 	// Require HTTPS for non-localhost URLs, but allow HTTP for localhost (when enabled)
-	if u.Scheme != "https" && u.Scheme != "http" {
+	if u.Scheme != httpsScheme && u.Scheme != httpScheme {
 		return false
 	}
-	if u.Scheme == "http" && !allowLocalhost {
+	if u.Scheme == httpScheme && !allowLocalhost {
 		return false
 	}
 
